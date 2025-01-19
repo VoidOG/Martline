@@ -1,5 +1,12 @@
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters, CallbackContext
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatPermissions
+from telegram.ext import (
+    Updater,
+    CommandHandler,
+    CallbackQueryHandler,
+    MessageHandler,
+    Filters,
+    CallbackContext,
+)
 from telegram.error import BadRequest
 from pymongo import MongoClient
 import logging
@@ -82,17 +89,15 @@ def mute_user(update: Update, context: CallbackContext):
         return
 
     try:
-        # Mute the user
-        context.bot.restrict_chat_member(
-            chat_id=chat.id,
-            user_id=user.id,
-            permissions={
-                "can_send_messages": False,
-                "can_send_media_messages": False,
-                "can_send_other_messages": False,
-                "can_add_web_page_previews": False,
-            },
+        # Mute the user using ChatPermissions
+        permissions = ChatPermissions(
+            can_send_messages=False,
+            can_send_media_messages=False,
+            can_send_other_messages=False,
+            can_add_web_page_previews=False,
         )
+        context.bot.restrict_chat_member(chat_id=chat.id, user_id=user.id, permissions=permissions)
+
         # Send the join message with buttons
         channels = fsub_collection.find()
         buttons = [
@@ -128,16 +133,13 @@ def verify_user(update: Update, context: CallbackContext):
 
     # Unmute the user if verification is successful
     try:
-        context.bot.restrict_chat_member(
-            chat_id=chat.id,
-            user_id=user.id,
-            permissions={
-                "can_send_messages": True,
-                "can_send_media_messages": True,
-                "can_send_other_messages": True,
-                "can_add_web_page_previews": True,
-            },
+        permissions = ChatPermissions(
+            can_send_messages=True,
+            can_send_media_messages=True,
+            can_send_other_messages=True,
+            can_add_web_page_previews=True,
         )
+        context.bot.restrict_chat_member(chat_id=chat.id, user_id=user.id, permissions=permissions)
         query.answer("Verification successful! You have been unmuted.")
         query.message.reply_text("Thank you for verifying. You can now text in the group!")
     except BadRequest as e:
@@ -145,15 +147,11 @@ def verify_user(update: Update, context: CallbackContext):
 
 # Handle new messages in the group
 def handle_message(update: Update, context: CallbackContext):
-    user = update.effective_user
-    chat = update.effective_chat
-
-    # Ignore messages from administrators or creators
-    member = context.bot.get_chat_member(chat.id, user.id)
-    if member.status in ("administrator", "creator"):
-        return
-
     mute_user(update, context)
+
+# Global error handler
+def error_handler(update: Update, context: CallbackContext):
+    logger.error(msg="Exception while handling an update:", exc_info=context.error)
 
 # Main function to set up the bot
 def main():
@@ -169,7 +167,10 @@ def main():
     dispatcher.add_handler(CallbackQueryHandler(verify_user, pattern="^verify$"))
 
     # Message handler for group messages
-    dispatcher.add_handler(MessageHandler(Filters.group, handle_message))
+    dispatcher.add_handler(MessageHandler(Filters.chat_type.groups, handle_message))
+
+    # Error handler
+    dispatcher.add_error_handler(error_handler)
 
     # Start the bot
     updater.start_polling()
