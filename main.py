@@ -1,33 +1,45 @@
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ChatPermissions
-from telegram.ext import (
-    Updater,
-    CommandHandler,
-    CallbackQueryHandler,
-    MessageHandler,
-    Filters,
-    CallbackContext,
-)
+from telegram import Update, ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters, CallbackContext
+from pymongo import MongoClient
 from telegram.error import BadRequest
-import logging
 
-# Enable logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
-
-# Bot configuration
+# Configuration
 BOT_TOKEN = "8163610288:AAFUT2N6RHsKvQv22xxbFOhWZveJ7cYZUHE"
-OWNER_ID = 6663845789  # Replace with your Telegram user ID
+OWNER_ID = 6663845789
+MONGO_URI = "mongodb+srv://Cenzo:Cenzo123@cenzo.azbk1.mongodb.net"
+REQUIRED_CHANNELS = ["martline", "identicate"]
 
-# Hardcoded channels for forced subscription
-CHANNELS = [
-    {"channel_username": "@martline"},
-    {"channel_username": "@identicate"},
-]
+# MongoDB Setup
+client = MongoClient(MONGO_URI)
+db = client["bot_database"]
+verified_users = db["verified_users"]
 
-# Mute the user and send the join message
-def mute_user(update: Update, context: CallbackContext):
+# Function to save verified user
+def save_verified_user(user_id):
+    if not verified_users.find_one({"user_id": user_id}):
+        verified_users.insert_one({"user_id": user_id})
+
+# Function to check if user is verified
+def is_user_verified(user_id):
+    return verified_users.find_one({"user_id": user_id}) is not None
+
+# Function to remove user from verified list (if they leave fsub channels)
+def remove_verified_user(user_id):
+    verified_users.delete_one({"user_id": user_id})
+
+# Function to check if user has joined all required channels
+def has_joined_required_channels(bot, user_id):
+    for channel in REQUIRED_CHANNELS:
+        try:
+            member = bot.get_chat_member(f"@{channel}", user_id)
+            if member.status not in ("member", "administrator", "creator"):
+                return False
+        except BadRequest:
+            return False
+    return True
+
+# Function to handle new messages and mute unverified users
+def handle_message(update: Update, context: CallbackContext):
     user = update.effective_user
     chat = update.effective_chat
 
@@ -36,8 +48,10 @@ def mute_user(update: Update, context: CallbackContext):
     if member.status in ("administrator", "creator") or user.id == OWNER_ID:
         return
 
-    try:
-        # Mute the user using ChatPermissions
+    # Check if user has left the channels
+    if not has_joined_required_channels(context.bot, user.id):
+        remove_verified_user(user.id)  # Remove from verified list
+        # Mute the user
         permissions = ChatPermissions(
             can_send_messages=False,
             can_send_media_messages=False,
@@ -46,43 +60,34 @@ def mute_user(update: Update, context: CallbackContext):
         )
         context.bot.restrict_chat_member(chat_id=chat.id, user_id=user.id, permissions=permissions)
 
-        # Create join buttons for the channels
+        # Send verification message
         buttons = [
-            [InlineKeyboardButton("Join Channel", url=f"https://t.me/{channel['channel_username'][1:]}")]
-            for channel in CHANNELS
+            [InlineKeyboardButton("Join Channel", url="https://t.me/martline")],
+            [InlineKeyboardButton("Join Channel", url="https://t.me/identicate")],
+            [InlineKeyboardButton("Verify", callback_data="verify")],
         ]
-
-        buttons.append([InlineKeyboardButton("Verify", callback_data="verify")])
         reply_markup = InlineKeyboardMarkup(buttons)
 
-        # Send the join message
         update.message.reply_text(
-            "You need to join the following channels to participate in the group:",
+            "You need to join the following channels to text in the group:",
             reply_markup=reply_markup,
         )
-    except BadRequest as e:
-        logger.error(f"Failed to mute user: {e}")
-        update.message.reply_text("The bot needs admin permissions to mute users.")
+    else:
+        # If user is verified, allow them to send messages
+        if not is_user_verified(user.id):
+            save_verified_user(user.id)
 
-# Verify the user's membership
+# Function to handle verification
 def verify_user(update: Update, context: CallbackContext):
     query = update.callback_query
     user = query.from_user
     chat = query.message.chat
 
     # Check if the user has joined all channels
-    for channel in CHANNELS:
-        try:
-            member = context.bot.get_chat_member(channel["channel_username"], user.id)
-            if member.status not in ("member", "administrator", "creator"):
-                query.answer("You haven't joined all required channels.", show_alert=True)
-                return
-        except BadRequest:
-            query.answer("An error occurred while verifying. Please try again later.", show_alert=True)
-            return
+    if has_joined_required_channels(context.bot, user.id):
+        save_verified_user(user.id)
 
-    # Unmute the user if verification is successful
-    try:
+        # Unmute the user
         permissions = ChatPermissions(
             can_send_messages=True,
             can_send_media_messages=True,
@@ -90,32 +95,25 @@ def verify_user(update: Update, context: CallbackContext):
             can_add_web_page_previews=True,
         )
         context.bot.restrict_chat_member(chat_id=chat.id, user_id=user.id, permissions=permissions)
+
         query.answer("Verification successful! You have been unmuted.")
         query.message.reply_text("Thank you for verifying. You can now text in the group!")
-    except BadRequest as e:
-        logger.error(f"Failed to unmute user: {e}")
+    else:
+        query.answer("You haven't joined all required channels.", show_alert=True)
 
-# Handle new messages in the group
-def handle_message(update: Update, context: CallbackContext):
-    mute_user(update, context)
+# Start command
+def start(update: Update, context: CallbackContext):
+    update.message.reply_text("Welcome! I ensures you have joined the required channels to text in Martline Marketplace.")
 
-# Global error handler
-def error_handler(update: Update, context: CallbackContext):
-    logger.error(msg="Exception while handling an update:", exc_info=context.error)
-
-# Main function to set up the bot
+# Main function to start the bot
 def main():
     updater = Updater(BOT_TOKEN)
     dispatcher = updater.dispatcher
 
-    # Callback query handler for "Verify" button
-    dispatcher.add_handler(CallbackQueryHandler(verify_user, pattern="^verify$"))
-
-    # Message handler for group messages
-    dispatcher.add_handler(MessageHandler(Filters.chat_type.groups, handle_message))
-
-    # Error handler
-    dispatcher.add_error_handler(error_handler)
+    # Handlers
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CallbackQueryHandler(verify_user, pattern="verify"))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
     # Start the bot
     updater.start_polling()
