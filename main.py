@@ -62,14 +62,14 @@ def handle_message(update: Update, context: CallbackContext):
 
         # Send verification message
         buttons = [
-            [InlineKeyboardButton("Join Channel", url="https://t.me/martline")],
-            [InlineKeyboardButton("Join Channel", url="https://t.me/identicate")],
-            [InlineKeyboardButton("Verify", callback_data="verify")],
+            [InlineKeyboardButton("𝖩𝗈𝗂𝗇 𝖢𝗁𝖺𝗇𝗇𝖾𝗅", url="https://t.me/martline")],
+            [InlineKeyboardButton("𝖩𝗈𝗂𝗇 𝖢𝗁𝖺𝗇𝗇𝖾𝗅", url="https://t.me/identicate")],
+            [InlineKeyboardButton("𝖵𝖾𝗋𝗂𝖿𝗒", callback_data="verify")],
         ]
         reply_markup = InlineKeyboardMarkup(buttons)
 
         update.message.reply_text(
-            "You need to join the following channels to text in the group:",
+            "𝖸𝗈𝗎 𝗇𝖾𝖾𝖽 𝗍𝗈 𝗃𝗈𝗂𝗇 𝗍𝗁𝖾 𝖿𝗈𝗅𝗅𝗈𝗐𝗂𝗇𝗀 𝖼𝗁𝖺𝗇𝗇𝖾𝗅𝗌 𝗍𝗈 𝗍𝖾𝗑𝗍 𝗂𝗇 𝗍𝗁𝖾 𝗀𝗋𝗈𝗎𝗉:",
             reply_markup=reply_markup,
         )
     else:
@@ -96,14 +96,14 @@ def verify_user(update: Update, context: CallbackContext):
         )
         context.bot.restrict_chat_member(chat_id=chat.id, user_id=user.id, permissions=permissions)
 
-        query.answer("Verification successful! You have been unmuted.")
-        query.message.reply_text("Thank you for verifying. You can now text in the group!")
+        query.answer("𝖵𝖾𝗋𝗂𝖿𝗂𝖼𝖺𝗍𝗂𝗈𝗇 𝗌𝗎𝖼𝖼𝖾𝗌𝗌𝖿𝗎𝗅 ✅! 𝖸𝗈𝗎 𝗁𝖺𝗏𝖾 𝖻𝖾𝖾𝗇 𝗎𝗇𝗆𝗎𝗍𝖾𝖽.")
+        query.message.reply_text("𝖳𝗁𝖺𝗇𝗄 𝗒𝗈𝗎 𝖿𝗈𝗋 𝗏𝖾𝗋𝗂𝖿𝗒𝗂𝗇𝗀. 𝖸𝗈𝗎 𝖼𝖺𝗇 𝗇𝗈𝗐 𝗍𝖾𝗑𝗍 𝗂𝗇 𝗍𝗁𝖾 𝗀𝗋𝗈𝗎𝗉!")
     else:
-        query.answer("You haven't joined all required channels.", show_alert=True)
+        query.answer("𝖸𝗈𝗎 𝗁𝖺𝗏𝖾𝗇'𝗍 𝗃𝗈𝗂𝗇𝖾𝖽 𝖺𝗅𝗅 𝗋𝖾𝗊𝗎𝗂𝗋𝖾𝖽 𝖼𝗁𝖺𝗇𝗇𝖾𝗅𝗌.", show_alert=True)
 
 # Start command
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text("Welcome! I ensures you have joined the required channels to text in Martline Marketplace.")
+    update.message.reply_text("𝗪𝗲𝗹𝗰𝗼𝗺𝗲!\n𝖨 𝖾𝗇𝗌𝗎𝗋𝖾 𝗒𝗈𝗎 𝗁𝖺𝗏𝖾 𝗃𝗈𝗂𝗇𝖾𝖽 𝗍𝗁𝖾 𝗋𝖾𝗊𝗎𝗂𝗋𝖾𝖽 𝖼𝗁𝖺𝗇𝗇𝖾𝗅𝗌 𝗍𝗈 𝗍𝖾𝗑𝗍 𝗂𝗇 𝖬𝖺𝗋𝗍𝗅𝗂𝗇𝖾 𝖬𝖺𝗋𝗄𝖾𝗍𝗉𝗅𝖺𝖼𝖾. \n@Martline")
 
 # Main function to start the bot
 def main():
