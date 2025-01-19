@@ -8,7 +8,6 @@ from telegram.ext import (
     CallbackContext,
 )
 from telegram.error import BadRequest
-from pymongo import MongoClient
 import logging
 
 # Enable logging
@@ -20,67 +19,12 @@ logger = logging.getLogger(__name__)
 # Bot configuration
 BOT_TOKEN = "8163610288:AAFUT2N6RHsKvQv22xxbFOhWZveJ7cYZUHE"
 OWNER_ID = 6663845789  # Replace with your Telegram user ID
-MONGO_URI = "mongodb+srv://Cenzo:Cenzo123@cenzo.azbk1.mongodb.net"  # Replace with your MongoDB connection string
-DB_NAME = "martline"  # Database name
 
-# Initialize MongoDB
-client = MongoClient(MONGO_URI)
-db = client[DB_NAME]
-fsub_collection = db["fsub_channels"]
-
-# Add a new channel to the forced subscription list
-def add_channel(update: Update, context: CallbackContext):
-    user = update.effective_user
-    if user.id != OWNER_ID:
-        update.message.reply_text("You are not authorized to use this command.")
-        return
-
-    if len(context.args) != 1:
-        update.message.reply_text("Usage: /add @channelusername")
-        return
-
-    channel_username = context.args[0]
-    if not channel_username.startswith("@"):
-        update.message.reply_text("Please provide a valid channel username starting with '@'.")
-        return
-
-    if fsub_collection.find_one({"channel_username": channel_username}):
-        update.message.reply_text("This channel is already in the list.")
-    else:
-        fsub_collection.insert_one({"channel_username": channel_username})
-        update.message.reply_text(f"Channel {channel_username} has been added to the list.")
-
-# Remove a channel from the forced subscription list
-def remove_channel(update: Update, context: CallbackContext):
-    user = update.effective_user
-    if user.id != OWNER_ID:
-        update.message.reply_text("You are not authorized to use this command.")
-        return
-
-    if len(context.args) != 1:
-        update.message.reply_text("Usage: /remove @channelusername")
-        return
-
-    channel_username = context.args[0]
-    if not fsub_collection.find_one({"channel_username": channel_username}):
-        update.message.reply_text("This channel is not in the list.")
-    else:
-        fsub_collection.delete_one({"channel_username": channel_username})
-        update.message.reply_text(f"Channel {channel_username} has been removed from the list.")
-
-# Show the added channels
-def added_channels(update: Update, context: CallbackContext):
-    user = update.effective_user
-    if user.id != OWNER_ID:
-        update.message.reply_text("You are not authorized to use this command.")
-        return
-
-    channels = list(fsub_collection.find())
-    if not channels:
-        update.message.reply_text("No channels have been added.")
-    else:
-        channel_list = "\n".join([channel["channel_username"] for channel in channels])
-        update.message.reply_text(f"Added channels:\n{channel_list}")
+# Hardcoded channels for forced subscription
+CHANNELS = [
+    {"channel_username": "@martline"},
+    {"channel_username": "@identicate"},
+]
 
 # Mute the user and send the join message
 def mute_user(update: Update, context: CallbackContext):
@@ -102,20 +46,16 @@ def mute_user(update: Update, context: CallbackContext):
         )
         context.bot.restrict_chat_member(chat_id=chat.id, user_id=user.id, permissions=permissions)
 
-        # Send the join message with buttons
-        channels = list(fsub_collection.find())
+        # Create join buttons for the channels
         buttons = [
             [InlineKeyboardButton("Join Channel", url=f"https://t.me/{channel['channel_username'][1:]}")]
-            for channel in channels
-            if "channel_username" in channel  # Ensure the key exists
+            for channel in CHANNELS
         ]
-        if not buttons:
-            update.message.reply_text("No valid channels found for forced subscription.")
-            return
 
         buttons.append([InlineKeyboardButton("Verify", callback_data="verify")])
         reply_markup = InlineKeyboardMarkup(buttons)
 
+        # Send the join message
         update.message.reply_text(
             "You need to join the following channels to participate in the group:",
             reply_markup=reply_markup,
@@ -131,7 +71,7 @@ def verify_user(update: Update, context: CallbackContext):
     chat = query.message.chat
 
     # Check if the user has joined all channels
-    for channel in fsub_collection.find():
+    for channel in CHANNELS:
         try:
             member = context.bot.get_chat_member(channel["channel_username"], user.id)
             if member.status not in ("member", "administrator", "creator"):
@@ -167,11 +107,6 @@ def error_handler(update: Update, context: CallbackContext):
 def main():
     updater = Updater(BOT_TOKEN)
     dispatcher = updater.dispatcher
-
-    # Command handlers
-    dispatcher.add_handler(CommandHandler("add", add_channel))
-    dispatcher.add_handler(CommandHandler("remove", remove_channel))
-    dispatcher.add_handler(CommandHandler("added", added_channels))
 
     # Callback query handler for "Verify" button
     dispatcher.add_handler(CallbackQueryHandler(verify_user, pattern="^verify$"))
