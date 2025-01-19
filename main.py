@@ -103,7 +103,7 @@ def mute_user(update: Update, context: CallbackContext):
         reply_markup = InlineKeyboardMarkup(buttons)
 
         update.message.reply_text(
-            "You need to join the following channels to participate in the group:",
+            "You need to join the following channels to text in the group:",
             reply_markup=reply_markup,
         )
     except BadRequest as e:
@@ -139,7 +139,7 @@ def verify_user(update: Update, context: CallbackContext):
             },
         )
         query.answer("Verification successful! You have been unmuted.")
-        query.message.reply_text("Thank you for verifying. You can now participate in the group!")
+        query.message.reply_text("Thank you for verifying. You can now text in the group!")
     except BadRequest as e:
         logger.error(f"Failed to unmute user: {e}")
 
