@@ -107,12 +107,17 @@ def mute_user(update: Update, context: CallbackContext):
         buttons = [
             [InlineKeyboardButton("Join Channel", url=f"https://t.me/{channel['channel_username'][1:]}")]
             for channel in channels
+            if "channel_username" in channel  # Ensure the key exists
         ]
+        if not buttons:
+            update.message.reply_text("No valid channels found for forced subscription.")
+            return
+
         buttons.append([InlineKeyboardButton("Verify", callback_data="verify")])
         reply_markup = InlineKeyboardMarkup(buttons)
 
         update.message.reply_text(
-            "You need to join the following channels to text in the group:",
+            "You need to join the following channels to participate in the group:",
             reply_markup=reply_markup,
         )
     except BadRequest as e:
