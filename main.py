@@ -36,15 +36,19 @@ def add_channel(update: Update, context: CallbackContext):
         return
 
     if len(context.args) != 1:
-        update.message.reply_text("Usage: /add <channel_id>")
+        update.message.reply_text("Usage: /add @channelusername")
         return
 
-    channel_id = context.args[0]
-    if fsub_collection.find_one({"channel_id": channel_id}):
+    channel_username = context.args[0]
+    if not channel_username.startswith("@"):
+        update.message.reply_text("Please provide a valid channel username starting with '@'.")
+        return
+
+    if fsub_collection.find_one({"channel_username": channel_username}):
         update.message.reply_text("This channel is already in the list.")
     else:
-        fsub_collection.insert_one({"channel_id": channel_id})
-        update.message.reply_text(f"Channel {channel_id} has been added to the list.")
+        fsub_collection.insert_one({"channel_username": channel_username})
+        update.message.reply_text(f"Channel {channel_username} has been added to the list.")
 
 # Remove a channel from the forced subscription list
 def remove_channel(update: Update, context: CallbackContext):
@@ -54,15 +58,15 @@ def remove_channel(update: Update, context: CallbackContext):
         return
 
     if len(context.args) != 1:
-        update.message.reply_text("Usage: /remove <channel_id>")
+        update.message.reply_text("Usage: /remove @channelusername")
         return
 
-    channel_id = context.args[0]
-    if not fsub_collection.find_one({"channel_id": channel_id}):
+    channel_username = context.args[0]
+    if not fsub_collection.find_one({"channel_username": channel_username}):
         update.message.reply_text("This channel is not in the list.")
     else:
-        fsub_collection.delete_one({"channel_id": channel_id})
-        update.message.reply_text(f"Channel {channel_id} has been removed from the list.")
+        fsub_collection.delete_one({"channel_username": channel_username})
+        update.message.reply_text(f"Channel {channel_username} has been removed from the list.")
 
 # Show the added channels
 def added_channels(update: Update, context: CallbackContext):
@@ -71,11 +75,11 @@ def added_channels(update: Update, context: CallbackContext):
         update.message.reply_text("You are not authorized to use this command.")
         return
 
-    channels = fsub_collection.find()
-    if not channels.count():
+    channels = list(fsub_collection.find())
+    if not channels:
         update.message.reply_text("No channels have been added.")
     else:
-        channel_list = "\n".join([channel["channel_id"] for channel in channels])
+        channel_list = "\n".join([channel["channel_username"] for channel in channels])
         update.message.reply_text(f"Added channels:\n{channel_list}")
 
 # Mute the user and send the join message
@@ -99,9 +103,9 @@ def mute_user(update: Update, context: CallbackContext):
         context.bot.restrict_chat_member(chat_id=chat.id, user_id=user.id, permissions=permissions)
 
         # Send the join message with buttons
-        channels = fsub_collection.find()
+        channels = list(fsub_collection.find())
         buttons = [
-            [InlineKeyboardButton("Join Channel", url=f"https://t.me/{channel['channel_id']}")]
+            [InlineKeyboardButton("Join Channel", url=f"https://t.me/{channel['channel_username'][1:]}")]
             for channel in channels
         ]
         buttons.append([InlineKeyboardButton("Verify", callback_data="verify")])
@@ -113,6 +117,7 @@ def mute_user(update: Update, context: CallbackContext):
         )
     except BadRequest as e:
         logger.error(f"Failed to mute user: {e}")
+        update.message.reply_text("The bot needs admin permissions to mute users.")
 
 # Verify the user's membership
 def verify_user(update: Update, context: CallbackContext):
@@ -123,7 +128,7 @@ def verify_user(update: Update, context: CallbackContext):
     # Check if the user has joined all channels
     for channel in fsub_collection.find():
         try:
-            member = context.bot.get_chat_member(channel["channel_id"], user.id)
+            member = context.bot.get_chat_member(channel["channel_username"], user.id)
             if member.status not in ("member", "administrator", "creator"):
                 query.answer("You haven't joined all required channels.", show_alert=True)
                 return
