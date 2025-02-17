@@ -13,7 +13,7 @@ app = Client("auto_invite_revoke", api_id, api_hash, bot_token=bot_token)
 # Configuration
 GROUP_ID = -1002407107904  # Your private group ID
 CHANNEL_ID = -1002095589913  # Your channel ID
-MESSAGE_LINK = "https://t.me/c/2095589913/5"  # Fixed message link in the repo
+MESSAGE_ID = 5  # The fixed message ID in the channel (extract this from the message link)
 OWNER_ID = 6663845789  # Your Telegram ID for logs
 
 current_invite_link = None
@@ -48,13 +48,12 @@ async def update_invite_link():
             await send_log(f"⚠️ Error creating invite link: {e}")
             continue  # Skip updating button if link creation fails
 
-        # Update the inline button in your fixed message link
+        # Update the inline button in your fixed message ID
         new_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Join Group", url=current_invite_link)]])
         try:
-            # Extract the message ID from the link and update the inline button
-            message_id = MESSAGE_LINK.split("/")[-1]
-            await app.edit_message_reply_markup(CHANNEL_ID, message_id, reply_markup=new_markup)
-            await send_log(f"✅ Updated inline button in the fixed message: {MESSAGE_LINK}")
+            # Using MESSAGE_ID directly as an integer (fixed message ID)
+            await app.edit_message_reply_markup(CHANNEL_ID, MESSAGE_ID, reply_markup=new_markup)
+            await send_log(f"✅ Updated inline button in the fixed message.")
         except Exception as e:
             await send_log(f"⚠️ Error updating inline button: {e}")
 
