@@ -57,7 +57,7 @@ async def update_invite_link():
         except Exception as e:
             await send_log(f"⚠️ Error updating inline button: {e}")
 
-        await asyncio.sleep(900)  # Wait 15 minutes before regenerating
+        await asyncio.sleep(600)  # Wait 10 minutes before regenerating
 
 @app.on_message(filters.new_chat_members)
 async def on_new_member(_, message):
