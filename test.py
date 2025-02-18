@@ -35,17 +35,17 @@ async def update_invite_link():
                 for link in links:
                     if link.is_revoked is False:
                         await app.revoke_chat_invite_link(GROUP_ID, link.invite_link)
-                        await send_log(f"🔴 Revoked invite link: {link.invite_link}")
+                        await send_log(f"Revoked invite link: {link.invite_link}")
             except Exception as e:
-                await send_log(f"⚠️ Error revoking links: {e}")
+                await send_log(f"Error revoking links: {e}")
 
-        # Create a new invite link (valid for 15 minutes)
+        # Create a new invite link (valid for 10 minutes)
         try:
-            invite = await app.create_chat_invite_link(GROUP_ID, expire_date=datetime.utcnow() + timedelta(minutes=15))
+            invite = await app.create_chat_invite_link(GROUP_ID, expire_date=datetime.utcnow() + timedelta(minutes=10))
             current_invite_link = invite.invite_link
-            await send_log(f"🟢 New invite link created: {current_invite_link}")
+            await send_log(f"New invite link created: {current_invite_link}")
         except Exception as e:
-            await send_log(f"⚠️ Error creating invite link: {e}")
+            await send_log(f"Error creating invite link: {e}")
             continue  # Skip updating button if link creation fails
 
         # Update the inline button in your fixed message ID
@@ -53,9 +53,9 @@ async def update_invite_link():
         try:
             # Using MESSAGE_ID directly as an integer (fixed message ID)
             await app.edit_message_reply_markup(CHANNEL_ID, MESSAGE_ID, reply_markup=new_markup)
-            await send_log(f"✅ Updated inline button in the fixed message.")
+            await send_log(f"Updated inline button in the fixed message.")
         except Exception as e:
-            await send_log(f"⚠️ Error updating inline button: {e}")
+            await send_log(f"Error updating inline button: {e}")
 
         await asyncio.sleep(600)  # Wait 10 minutes before regenerating
 
@@ -65,9 +65,9 @@ async def on_new_member(_, message):
     if current_invite_link:
         try:
             await app.revoke_chat_invite_link(GROUP_ID, current_invite_link)
-            await send_log(f"⚠️ Invite link revoked after {message.from_user.mention} joined.")
+            await send_log(f"Invite link revoked after {message.from_user.mention} joined.")
         except Exception as e:
-            await send_log(f"⚠️ Error revoking link after user joined: {e}")
+            await send_log(f"Error revoking link after user joined: {e}")
 
 async def main():
     await app.start()
