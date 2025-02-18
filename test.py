@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 # API credentials
 api_id = 28561722
 api_hash = "a538ba07656f746def99bed7032121cc"
-bot_token = "8163610288:AAFnKCUq5mz5bvGPRDla-3-ay2x-wk9vLaw"
+bot_token = "7667383525:AAEIhwn2IhwbAsqM79yywr0b-TIw9V9FfYY"
 
 app = Client("auto_invite_revoke", api_id, api_hash, bot_token=bot_token)
 
