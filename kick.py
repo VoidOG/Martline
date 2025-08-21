@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, ContextTypes
 
-BOT_TOKEN = "8163610288:AAFnKCUq5mz5bvGPRDla-3-ay2x-wk9vLaw"
+BOT_TOKEN = "7667383525:AAEIhwn2IhwbAsqM79yywr0b-TIw9V9FfYY"
 
 async def kick_phantom(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type not in ["group", "supergroup"]:
