@@ -5,7 +5,7 @@ from pymongo import MongoClient
 from telegram.error import BadRequest
 
 # Configuration
-BOT_TOKEN = "8163610288:AAFnKCUq5mz5bvGPRDla-3-ay2x-wk9vLaw"
+BOT_TOKEN = "8163610288:AAF_on08IJBRF9tZCnZOZS7T8PCH22voz5w"
 OWNER_ID = 6663845789
 MONGO_URI = "mongodb+srv://Cenzo:Cenzo123@cenzo.azbk1.mongodb.net"
 REQUIRED_CHANNEL = "obscall"      # only one channel
