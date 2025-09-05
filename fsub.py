@@ -8,7 +8,7 @@ from telegram.error import BadRequest
 BOT_TOKEN = "8163610288:AAF_on08IJBRF9tZCnZOZS7T8PCH22voz5w"
 OWNER_ID = 6663845789
 MONGO_URI = "mongodb+srv://Cenzo:Cenzo123@cenzo.azbk1.mongodb.net"
-REQUIRED_CHANNEL = "obscall"      # only one channel
+REQUIRED_CHANNEL = "martline"      # only one channel
 
 # MongoDB Setup
 client = MongoClient(MONGO_URI)
