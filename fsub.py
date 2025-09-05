@@ -104,6 +104,7 @@ def verify_user(update: Update, context: CallbackContext):
         can_send_media_messages=True,
         can_send_other_messages=True,
         can_add_web_page_previews=True,
+        can_invite_users=True,
     )
     context.bot.restrict_chat_member(chat.id, user.id, permissions=permissions)
     query.answer("Verify ho gaye ho! Ab group me likh sakte ho ✅")
