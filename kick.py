@@ -34,7 +34,7 @@ SPAM_PATTERNS = [
     "- via @phantomadsbot",
     "adbot - via @camprunBot 🚀",
     "adbot",
-    "-- via @QuantumAdzBot (FREE) -- via @QuantumAdzBot (FREE),
+    "-- via @QuantumAdzBot (FREE) -- via @QuantumAdzBot (FREE)",
     "-- via @QuantumAdzBot (FREE)",
     "-- via @QuantumAdzBot",
     # ASCII-safe fallback
