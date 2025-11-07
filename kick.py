@@ -31,7 +31,10 @@ SPAM_PATTERNS = [
     "via @phantomadsbot",
     "@phantomadsbot",
     "phantomadsbot",
-    "- via @phantomadsbot",  # ASCII-safe fallback
+    "- via @phantomadsbot",
+    "adbot - via @camprunBot 🚀",
+    "adbot"
+    # ASCII-safe fallback
 ]
 
 def matches_spam_profile(user: User) -> bool:
